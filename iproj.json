@@ -1,0 +1,10 @@
+{
+	"description":"MRL1 Project",
+	"version":"0.0.1",
+	"includePath":[
+		"FGMRL1_SRC/QPROTOSRC"
+	],
+	"repository":"git@github.com:fgrumeau/TSMRL1.git",
+	"objlib":"&L01",
+	"curlib":"*CRTDFT"
+}
