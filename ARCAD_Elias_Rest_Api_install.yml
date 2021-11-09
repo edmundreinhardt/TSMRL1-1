@@ -12,31 +12,42 @@
 # needs a liberty websphere target to deploy the war
 
 # Example:
-  # ansible-playbook -i hosts ARCAD_Builder_webconsole_install.yml -e "target_ibmi=your_ibmi"
+  # ansible-playbook -i hosts ELIAS_REST_API_install.yml -e "target_ibmi=your_ibmi"
   
 
 - hosts: '{{ target_ibmi }}'
   gather_facts: no
   
   vars:
-    srcpath: "/tmp/builder.war"
+    srcpath: "/tmp/elias-jaxrs.war"
     targetdir: "/www/RSEAPI/wlp/usr/servers/RSEAPI"
+    webapps: "apps/"
+    war: "elias-jaxrs.war"
+    liberty: "yes"
 
   tasks:
 
   - name: Copy file from Ansible Master to target IBM i  on the webapps folder 
     copy:
       src: "{{srcpath}}"
-      dest: "{{targetdir}}/apps/"
+      dest: "{{targetdir}}/{{webapps}}"
 
- 
+  # - name: Update server.xml to add the new Elias 
+  #   lineinfile:
+  #     path: "{{targetdir}}/server.xml"
+  #     regexp: "</server>"
+  #     line: '<application autoStart="true" context-root="/elias" id="elias" location="elias-jaxrs.war" name="Elias" type="war" /> ' 
+  #     state: present
+  #     backup: yes
+
   - name: Update server.xml to add the new Elias 
     lineinfile:
       path: "{{targetdir}}/server.xml"
       regexp: "</server>"
-      line: '<application autoStart="true" context-root="/builder" id="BUILDER" location="builder.war" name="Builder" type="war" autoExpand="true" />' 
+      line: '<webApplication contextRoot="/elias" location="{{ war }}" />' 
       state: present
       backup: yes
+    when: liberty == "yes"
 
   - name: Update server.xml to add the </server> at the end
     lineinfile:
@@ -44,3 +55,4 @@
       insertafter: EOF
       line: '</server>' 
       state: present
+    when: liberty == "yes"

@@ -1,0 +1,60 @@
+
+---
+# Description:
+  # This playbook shows how to install an ARCAD macro using Ansible and ibm collection
+  # ibm.power_ibmi (ansible for i)
+  
+# Restriction: 
+  # You must have *ALLOBJ special authorities to use this playbook (see inventory to define the profile to use 
+  # that should be configured with ssh
+
+# Parameters:
+  # fixpath : not required /tmp assumed by default ansible server path containing the fix FMxxxxxx.dta file
+  # fix : not required the fix FM210260 will be installed
+  # ext : not required assuming the extension is .DTA
+ 
+# Example:
+  # ansible-playbook -i hosts ARCAD_Macro_install.yml -e "target_ibmi=your_ibmi"
+
+- hosts: '{{ target_ibmi }}'
+  gather_facts: no
+  collections:
+   - ibm.power_ibmi
+  vars:
+      fixpath: "/tmp/"
+      macro: "PRPBUILD"
+      savf: "PRPBUILD_Z"
+      ext: ".SAVF"
+  
+  tasks:
+ 
+    - name: copy macro {{ macro }} to the target
+      copy: 
+        src: "{{ fixpath }}{{ savf }}{{ext}}"
+        dest: "{{ fixpath}}{{ savf }}{{ext}}"
+
+
+    - name: create savf into ARCAD_NET library mandatory to use the ARSTMACCMD
+      ibmi_cl_command:
+        cmd: CRTSAVF ARCAD_NET/{{ savf }} 
+      ignore_errors: yes
+
+    - name: clear savf if already exists in ARCAD_NET
+      ibmi_cl_command:
+        cmd: CLRSAVF FILE(ARCAD_NET/{{ savf }}) 
+
+    - name: copy into a savefile
+      ibmi_cl_command:
+        cmd: cpyfrmstmf  FROMSTMF('{{fixpath}}{{ savf }}{{ext}}') TOMBR('/QSYS.LIB/ARCAD_NET.LIB/{{ savf }}.file') MBROPT(*REPLACE) 
+        joblog: true
+
+    - name: restore macro-command {{macro}}
+      ibmi_cl_command:
+        cmd: ARSTMACCMD MACRO({{ macro }}) DEV(*SAVF) KEEPLOG(*YES) CHKOBJREF(*NO)     
+        joblog: true
+
+    - name: regenerate macro-command {{ macro }}
+      ibmi_cl_command:
+        cmd: AGENMACCMD MACRO({{ macro }})
+        joblog: true
+
