@@ -20,11 +20,11 @@
 
   tasks:
 
-  - name: Verify {{ item }} installed
+  - name: Verify {{ package_name }} installed
     raw: /QOpensys/pkgs/bin/yum list installed | grep {{ package_name }}
     register: package_query_result
     ignore_errors: true
 
-  - name: uninstall {{ item }} 
+  - name: uninstall {{ package_name }} 
     raw: /QOpensys/pkgs/bin/yum remove {{package_name}} -y
     when: package_name in package_query_result.stdout
